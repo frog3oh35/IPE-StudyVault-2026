@@ -20,4 +20,8 @@
 
 ---
 
-> Powered by [Claude Code tutor skill](https://github.com/anthropics/claude-code) — AI 기반 대화형 퀴즈 튜터로 학습 노트를 생성하고 복습했습니다.
+## Thanks to
+
+이 저장소의 학습 노트는 [bevibing/tutor-skills](https://github.com/bevibing/tutor-skills) 덕분에 만들어졌습니다.
+
+`tutor-skills`는 Claude Code에서 동작하는 AI 기반 대화형 퀴즈 튜터 스킬로, 학습 자료를 Obsidian StudyVault 형태로 생성하고 퀴즈·복습을 도와줍니다.
