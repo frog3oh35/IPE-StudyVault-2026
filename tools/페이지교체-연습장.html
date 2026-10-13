@@ -1,0 +1,617 @@
+<title>페이지 교체 연습장</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one column workbench — controls, then the frame "memory board" beside the action panel, then the exam-style trace table */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --ink:#17212b; --muted:#5b6876; --line:#d3dae2;
+  --accent:#2f56c9; --accent-soft:#e3e9fb;
+  --victim:#b86b0c; --victim-soft:#fbeedb;
+  --hit:#1d7f53; --hit-soft:#dff3e9;
+  --fault:#bf3b27; --fault-soft:#fbe5e1;
+  --font-body:"IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161c; --surface:#19212a; --ink:#e5eaf0; --muted:#94a1ae; --line:#2b3540;
+    --accent:#86a3f3; --accent-soft:#1f2a45;
+    --victim:#e8a64e; --victim-soft:#3a2a14;
+    --hit:#55c993; --hit-soft:#173328;
+    --fault:#f2826d; --fault-soft:#3b1d18;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161c; --surface:#19212a; --ink:#e5eaf0; --muted:#94a1ae; --line:#2b3540;
+  --accent:#86a3f3; --accent-soft:#1f2a45;
+  --victim:#e8a64e; --victim-soft:#3a2a14;
+  --hit:#55c993; --hit-soft:#173328;
+  --fault:#f2826d; --fault-soft:#3b1d18;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:28px 48px;display:grid;gap:20px}
+h1{font-size:1.65rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:1rem;margin:0 0 10px;text-wrap:balance}
+.sub{margin:6px 0 0;color:var(--muted);max-width:65ch}
+.sub b{color:var(--ink)}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.controls{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:7px 16px;font-family:var(--font-mono);font-weight:700;color:var(--muted)}
+.seg button[aria-checked="true"]{background:var(--accent);color:var(--surface)}
+.field{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.9rem}
+select,input[type=text]{background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px}
+input[type=text]{width:13rem;max-width:100%;font-family:var(--font-mono)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:6px 12px}
+.btn:hover{border-color:var(--accent)}
+.custom{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+
+.rule{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.rule .algo{font-family:var(--font-mono);font-weight:700;color:var(--accent);font-size:1.1rem}
+.rule .onhit{color:var(--muted)}
+.rule .onhit b{color:var(--ink)}
+
+.refs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+.ref{font-family:var(--font-mono);font-weight:700;min-width:2.3rem;text-align:center;padding:6px 4px 4px;border-radius:7px;border:1px solid var(--line);color:var(--muted);display:grid;gap:1px;font-variant-numeric:tabular-nums}
+.ref small{font-size:.65rem;font-weight:500;letter-spacing:.04em;min-height:1em}
+.ref.past.f{background:var(--fault-soft);color:var(--fault);border-color:transparent}
+.ref.past.h{background:var(--hit-soft);color:var(--hit);border-color:transparent}
+.ref.now{border:2px solid var(--accent);color:var(--ink);background:var(--accent-soft);transform:translateY(-2px)}
+
+.play{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;margin-top:14px}
+@media (max-width:680px){.play{grid-template-columns:1fr}}
+.slots{display:grid;gap:8px;align-content:start}
+.slot{display:grid;grid-template-columns:3.2rem 1fr auto;align-items:center;gap:10px;width:100%;text-align:left;background:var(--bg);border:2px solid var(--line);border-radius:9px;padding:10px 12px;min-height:64px}
+.slot:hover{border-color:var(--accent)}
+.slot .lab{font-family:var(--font-mono);color:var(--muted);font-size:.85rem}
+.slot .lab kbd{display:block;font-size:.65rem;opacity:.8}
+.slot .pg{font-family:var(--font-mono);font-weight:700;font-size:1.7rem;line-height:1}
+.slot .pg.empty{font-family:var(--font-body);font-size:.9rem;font-weight:400;color:var(--muted)}
+.slot .meta{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);text-align:right}
+.slot.just-f{border-color:var(--fault);background:var(--fault-soft);animation:pop .45s ease}
+.slot.just-h{border-color:var(--hit);background:var(--hit-soft);animation:pop .45s ease}
+.slot.next{border-style:dashed;border-color:var(--victim)}
+.out{font-family:var(--font-mono);font-size:.78rem;color:var(--victim)}
+@keyframes pop{0%{transform:scale(.97)}60%{transform:scale(1.02)}100%{transform:scale(1)}}
+.shake{animation:shake .35s ease}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+
+.side{display:grid;gap:12px;align-content:start;min-width:0}
+.hitbtn{border:2px solid var(--hit);background:var(--hit-soft);color:var(--hit);border-radius:9px;padding:12px;font-family:var(--font-mono);font-weight:700;font-size:1.05rem;letter-spacing:.06em}
+.hitbtn kbd{font-size:.7rem;opacity:.75;margin-left:6px}
+.hitbtn:disabled,.slot:disabled{opacity:.55;cursor:default}
+.msg{min-height:3.4rem;border-radius:9px;padding:10px 12px;background:var(--bg);border:1px solid var(--line)}
+.msg.ok{background:var(--hit-soft);border-color:transparent}
+.msg.bad{background:var(--fault-soft);border-color:transparent}
+.msg.done{background:var(--accent-soft);border-color:transparent}
+.msg b{font-weight:700}
+.record{border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:grid;gap:8px}
+.rechead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:.85rem}
+.recline{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--font-mono);min-height:2rem}
+.recline .chip{padding:3px 9px;border-radius:6px;background:var(--bg);border:1px solid var(--line);font-weight:700}
+.recline .chip.v{border-color:var(--victim);color:var(--victim);background:var(--victim-soft)}
+.recline .arrow{color:var(--muted);font-size:.8rem}
+.recline .hidden{color:var(--muted);font-family:var(--font-body);font-size:.85rem}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.stats{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-variant-numeric:tabular-nums}
+.stats b{color:var(--ink);font-family:var(--font-mono)}
+
+.scroll{overflow-x:auto}
+table.grid{border-collapse:collapse;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.grid th,.grid td{border:1px solid var(--line);min-width:2.3rem;height:2.1rem;text-align:center;padding:0 4px}
+.grid th{color:var(--muted);font-weight:500;background:var(--bg)}
+.grid th.rowh{font-family:var(--font-body);font-size:.8rem;padding:0 8px;white-space:nowrap}
+.grid td.new{color:var(--fault);font-weight:700}
+.grid td.hitc{color:var(--hit);font-weight:700;text-decoration:underline}
+.grid td.fmark{color:var(--fault);font-weight:700}
+.grid td.hmark{color:var(--hit);font-size:.75rem}
+.grid .curcol{background:var(--accent-soft)}
+.legend{color:var(--muted);font-size:.82rem;margin-top:8px}
+.cmp{display:grid;gap:18px}
+.cmp h3{margin:0 0 6px;font-size:.95rem;font-family:var(--font-mono)}
+.cmp h3 span{color:var(--fault)}
+kbd{font-family:var(--font-mono)}
+.ai{display:grid;gap:12px}
+.aihead{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.aihead h2{margin:0}
+.ainote{color:var(--muted);font-size:.85rem}
+.airow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0}
+#aiQuestion{flex:1 1 16rem;width:auto;font-family:var(--font-body)}
+.aiout{border-radius:9px;padding:12px 14px;background:var(--accent-soft);white-space:pre-wrap;max-width:75ch;min-width:0;overflow-wrap:anywhere}
+.aiout.err{background:var(--fault-soft)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.ref.now{transform:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>페이지 교체 연습장</h1>
+    <p class="sub">참조가 하나씩 들어와요. 이미 있으면 <b>HIT</b>, 없으면 <b>새 페이지가 들어갈 칸</b>을 눌러요. 칸 순서로 고르지 말고, 매번 <b>"누가 나가나"</b>를 규칙으로 정하세요.</p>
+  </header>
+
+  <section class="panel controls" aria-label="문제 설정">
+    <div class="seg" role="radiogroup" aria-label="알고리즘" id="algoSeg">
+      <button type="button" role="radio" data-algo="FIFO" id="algo-fifo">FIFO</button>
+      <button type="button" role="radio" data-algo="LRU" id="algo-lru">LRU</button>
+      <button type="button" role="radio" data-algo="LFU" id="algo-lfu">LFU</button>
+    </div>
+    <label class="field" for="frameCount">프레임
+      <select id="frameCount"><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
+    </label>
+    <label class="field" for="preset">문제
+      <select id="preset"></select>
+    </label>
+    <form class="custom" id="customForm">
+      <input type="text" id="refInput" placeholder="직접 입력: 7 0 1 2 0 3" aria-label="참조열 직접 입력">
+      <button class="btn" type="submit">적용</button>
+    </form>
+    <button class="btn" type="button" id="randBtn">랜덤 문제</button>
+  </section>
+
+  <section class="panel" aria-label="연습">
+    <div class="rule" id="rule"></div>
+    <div class="refs" id="refs" aria-label="참조열"></div>
+    <div class="play">
+      <div class="slots" id="slots"></div>
+      <div class="side">
+        <button type="button" class="hitbtn" id="hitBtn">HIT<kbd>H</kbd></button>
+        <div class="msg" id="msg" role="status" aria-live="polite"></div>
+        <div class="record">
+          <div class="rechead"><span id="recLabel"></span><button class="btn" type="button" id="recToggle"></button></div>
+          <div class="recline" id="recLine"></div>
+        </div>
+        <div class="row">
+          <button class="btn" type="button" id="revealBtn">이번 단계 정답 보기</button>
+          <button class="btn" type="button" id="resetBtn">처음부터</button>
+        </div>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section class="panel ai" id="aiPanel" aria-label="AI 튜터">
+    <div class="aihead">
+      <h2>AI 튜터</h2>
+      <span class="ainote" id="aiNote">AI 연결을 확인하는 중이에요…</span>
+    </div>
+    <div class="airow" id="aiControls" hidden>
+      <label class="field" for="aiGoal">문제 목적
+        <select id="aiGoal">
+          <option value="차례가 아닌 페이지가 hit된 뒤 FIFO와 LRU의 교체 대상이 갈리는 장면이 2번 이상 나오게">차례 아닌 hit 함정</option>
+          <option value="hit가 자주 나서 LRU 사용 순서를 계속 고쳐야 하게">hit 많이 (LRU 연습)</option>
+          <option value="LFU에서 참조 횟수 동점이 여러 번 나와 '먼저 들어온 것' 규칙을 써야 하게">LFU 동점 많이</option>
+          <option value="FIFO, LRU, LFU 세 방식의 페이지 부재 횟수가 서로 다르게">세 방식 결과가 다 다르게</option>
+          <option value="정보처리기사 실기 기출과 비슷한 난이도와 길이(12~15개)로">기출 스타일</option>
+        </select>
+      </label>
+      <button class="btn" type="button" id="aiGenBtn">AI 문제 만들기</button>
+      <button class="btn" type="button" id="aiExplainBtn">이번 단계 설명해 줘</button>
+    </div>
+    <form class="airow" id="aiAskForm" hidden>
+      <input type="text" id="aiQuestion" placeholder="예: 여기서 왜 0이 안 나가요?" aria-label="AI에게 질문">
+      <button class="btn" type="submit">질문</button>
+      <button class="btn" type="button" id="aiStop" hidden>멈추기</button>
+    </form>
+    <div class="aiout" id="aiOut" hidden></div>
+  </section>
+
+  <section class="panel" aria-label="풀이 표">
+    <h2>풀이 표</h2>
+    <div class="scroll"><table class="grid" id="grid"></table></div>
+    <p class="legend">빨간 숫자 = 이번에 새로 들어온 페이지 · 초록 밑줄 = hit · F = 페이지 부재</p>
+  </section>
+
+  <section class="panel" id="compareWrap" hidden aria-label="세 방식 비교">
+    <h2>세 방식 정답 비교</h2>
+    <div class="cmp" id="cmp"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  const ALGOS = {
+    FIFO:{rule:'가장 먼저 <b>들어온</b> 페이지가 나가요', onHit:'아무것도 안 바뀜', rec:'들어온 순서 (왼쪽 = 가장 먼저 들어옴)'},
+    LRU:{rule:'가장 오래 <b>안 쓴</b> 페이지가 나가요', onHit:'그 페이지를 맨 뒤(가장 최근)로', rec:'사용 순서 (왼쪽 = 가장 오래 안 씀)'},
+    LFU:{rule:'쓴 <b>횟수</b>가 가장 적은 페이지가 나가요 (같으면 먼저 들어온 것)', onHit:'그 페이지 횟수 +1', rec:'페이지:횟수 (들어온 순서대로)'}
+  };
+  const PRESETS = [
+    {label:'10-14 Q14 · 7 0 1 2 0 3 0 4 2 3', refs:'7 0 1 2 0 3 0 4 2 3', n:3},
+    {label:'연습 3 · 5 2 5 8 1 2 5', refs:'5 2 5 8 1 2 5', n:3},
+    {label:'10-06 · 1 2 3 4 1 2 5 1 2 3 4 5', refs:'1 2 3 4 1 2 5 1 2 3 4 5', n:3},
+    {label:'차례 아닌 hit · A B C B D E', refs:'A B C B D E', n:3},
+    {label:'노트 문제 2 · 1 2 3 1 4 1 5 2', refs:'1 2 3 1 4 1 5 2', n:3},
+    {label:'노트 문제 3 · 프레임 4', refs:'1 2 3 4 1 5 2 6 1 2', n:4}
+  ];
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const pg = p => '<b>' + esc(p) + '</b>';
+
+  function pickVictim(slots, algo){
+    let best = -1;
+    for (let i = 0; i < slots.length; i++){
+      const a = slots[i]; if (!a) continue;
+      if (best < 0){ best = i; continue; }
+      const b = slots[best];
+      if (algo === 'FIFO' ? a.load < b.load
+        : algo === 'LRU' ? a.last < b.last
+        : (a.count < b.count || (a.count === b.count && a.load < b.load))) best = i;
+    }
+    return best;
+  }
+  function simulate(refs, n, algo){
+    const slots = Array(n).fill(null), steps = [];
+    refs.forEach((r, i) => {
+      const t = i + 1, before = slots.map(s => s && {...s});
+      const st = {ref:r, t, before};
+      const idx = slots.findIndex(s => s && s.page === r);
+      if (idx >= 0){
+        st.hit = true; st.slot = idx; slots[idx].last = t; slots[idx].count++;
+      } else {
+        st.hit = false;
+        let e = slots.findIndex(s => !s);
+        if (e < 0){ e = pickVictim(slots, algo); st.victim = slots[e].page; }
+        st.slot = e;
+        slots[e] = {page:r, load:t, last:t, count:1};
+      }
+      st.after = slots.map(s => s && {...s});
+      steps.push(st);
+    });
+    return steps;
+  }
+  function recordList(slots, algo){
+    const live = slots.filter(Boolean).slice();
+    if (algo === 'LRU') live.sort((a, b) => a.last - b.last);
+    else live.sort((a, b) => a.load - b.load);
+    return live.map(s => ({page:s.page, txt: algo === 'LFU' ? s.page + ':' + s.count : String(s.page)}));
+  }
+  const recStr = (slots, algo) => '[' + recordList(slots, algo).map(x => esc(x.txt)).join(', ') + ']';
+  function parseRefs(text){
+    return text.split(/[\s,]+/).map(s => s.trim()).filter(Boolean).map(s => s.slice(0, 3)).slice(0, 30);
+  }
+
+  const S = {algo:'FIFO', refs:parseRefs(PRESETS[0].refs), n:3, steps:[], cur:0, faults:0, mistakes:0,
+             stepWrong:0, showRec:false, autoRec:false, done:false, flash:null, msg:'', msgKind:'', lastWrite:-1};
+
+  function reset(){
+    S.steps = simulate(S.refs, S.n, S.algo);
+    S.cur = 0; S.faults = 0; S.mistakes = 0; S.stepWrong = 0; S.autoRec = false;
+    S.done = false; S.flash = null; S.lastWrite = -1; S.msgKind = ''; S.lastChoice = undefined;
+    S.msg = '첫 참조 ' + pg(S.refs[0]) + '부터 시작해요. 빈 칸은 위에서부터 채워요.';
+    render();
+  }
+
+  function explainCorrect(st, revealed){
+    const pre = revealed ? '정답: ' : '✓ ';
+    if (st.hit){
+      if (S.algo === 'FIFO') return pre + 'hit! FIFO는 hit여도 <b>아무것도 안 바뀌어요</b>. 들어온 순서 그대로 ' + recStr(st.after, 'FIFO');
+      if (S.algo === 'LRU') return pre + 'hit! ' + pg(st.ref) + '을(를) 맨 뒤로 → ' + recStr(st.after, 'LRU');
+      return pre + 'hit! ' + pg(st.ref) + '의 횟수가 ' + st.after[st.slot].count + '(으)로 → ' + recStr(st.after, 'LFU');
+    }
+    if (st.victim === undefined) return pre + '부재. 빈 칸 ' + (st.slot + 1) + 'x에 ' + pg(st.ref) + ' 넣기';
+    return pre + '부재. ' + pg(st.victim) + ' 나가고 그 자리 ' + (st.slot + 1) + 'x에 ' + pg(st.ref);
+  }
+
+  function explainWrong(st, choice){
+    const b = st.before, r = st.ref;
+    if (choice === 'hit') return pg(r) + '은(는) 지금 프레임에 없어요. <b>부재</b>예요. 들어갈 칸을 골라 주세요.';
+    if (st.hit) return pg(r) + '은(는) 이미 ' + (st.slot + 1) + 'x에 있어요. <b>hit</b>라서 칸은 건드리지 않아요. HIT를 누르세요.';
+    const firstEmpty = b.findIndex(s => !s);
+    if (firstEmpty >= 0){
+      return b[choice]
+        ? '아직 빈 칸이 있어요. 빈 칸이 있으면 아무도 안 나가요. ' + (firstEmpty + 1) + 'x에 넣으세요.'
+        : '빈 칸은 위에서부터 채워요. ' + (firstEmpty + 1) + 'x부터요.';
+    }
+    const p = b[choice].page;
+    let why = '';
+    const nextSlot = (S.lastWrite + 1) % S.n;
+    if (S.algo === 'LRU'){
+      let recent = -1;
+      b.forEach((s, i) => { if (recent < 0 || s.last > b[recent].last) recent = i; });
+      if (choice === recent) why = ' ' + pg(p) + '은(는) <b>가장 최근에 쓴</b> 페이지예요. LRU는 반대로 가장 오래 안 쓴 걸 내보내요.';
+    }
+    if (!why){
+      for (const a of ['FIFO','LRU','LFU']){
+        if (a !== S.algo && pickVictim(b, a) === choice){
+          why = ' ' + pg(p) + '을(를) 고르는 건 <b>' + a + '</b> 기준이에요.';
+          if (S.algo === 'FIFO') why += ' FIFO는 hit를 무시하고 들어온 순서만 봐요.';
+          else if (a === 'FIFO') why += ' ' + S.algo + '는 hit가 순서를 바꿔요.';
+          break;
+        }
+      }
+    }
+    if (!why && S.algo !== 'FIFO' && choice === nextSlot)
+      why = ' "다음 칸" 순서로 고른 것 같아요. ' + S.algo + '는 칸 순서와 상관없어요.';
+    const hint = S.algo === 'FIFO' ? '가장 먼저 들어온 페이지는?' : S.algo === 'LRU' ? '가장 오래 안 쓴 페이지는?' : '횟수가 가장 적은 페이지는? (같으면 먼저 들어온 것)';
+    return pg(p) + '은(는) 지금 나갈 차례가 아니에요.' + why + ' ' + hint;
+  }
+
+  function act(choice){
+    if (S.done) return;
+    const st = S.steps[S.cur];
+    const expected = st.hit ? 'hit' : st.slot;
+    if (choice === expected) advance(false);
+    else {
+      S.mistakes++; S.stepWrong++; S.lastChoice = choice;
+      if (S.stepWrong >= 2) S.autoRec = true;
+      S.msg = explainWrong(st, choice) + (S.stepWrong >= 2 && !S.showRec ? '<br><small>기록 줄을 열어 뒀어요.</small>' : '');
+      S.msgKind = 'bad';
+      render();
+      const el = choice === 'hit' ? $('hitBtn') : $('slots').children[choice];
+      if (el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+    }
+  }
+  function advance(revealed){
+    const st = S.steps[S.cur];
+    if (revealed){ S.mistakes++; }
+    if (!st.hit){ S.faults++; S.lastWrite = st.slot; }
+    S.msg = explainCorrect(st, revealed);
+    S.msgKind = revealed ? '' : 'ok';
+    S.flash = {slot:st.slot, hit:st.hit, victim:st.victim};
+    S.cur++; S.stepWrong = 0; S.autoRec = false; S.lastChoice = undefined;
+    if (S.cur >= S.steps.length){
+      S.done = true;
+      S.msg += '<br><b>끝!</b> ' + S.algo + ' 페이지 부재 <b>' + S.faults + '회</b>, 실수 ' + S.mistakes + '번. 아래에서 세 방식을 비교해 보세요.';
+      S.msgKind = 'done';
+    }
+    render();
+  }
+
+  function renderGrid(table, steps, upto, curCol){
+    const n = steps[0] ? steps[0].before.length : S.n;
+    let h = '<thead><tr><th class="rowh">참조</th>';
+    steps.forEach((st, i) => { h += '<th class="' + (i === curCol ? 'curcol' : '') + '">' + esc(st.ref) + '</th>'; });
+    h += '</tr></thead><tbody>';
+    for (let k = 0; k < n; k++){
+      h += '<tr><th class="rowh">' + (k + 1) + 'x</th>';
+      steps.forEach((st, i) => {
+        let cls = i === curCol ? 'curcol' : '', v = '';
+        if (i < upto){
+          const s = st.after[k];
+          v = s ? esc(s.page) : '';
+          if (k === st.slot) cls += st.hit ? ' hitc' : ' new';
+        }
+        h += '<td class="' + cls + '">' + v + '</td>';
+      });
+      h += '</tr>';
+    }
+    h += '<tr><th class="rowh">부재</th>';
+    steps.forEach((st, i) => {
+      const done = i < upto;
+      h += '<td class="' + (i === curCol ? 'curcol ' : '') + (done ? (st.hit ? 'hmark' : 'fmark') : '') + '">' + (done ? (st.hit ? 'hit' : 'F') : '') + '</td>';
+    });
+    h += '</tr></tbody>';
+    table.innerHTML = h;
+  }
+
+  function render(){
+    document.querySelectorAll('#algoSeg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.algo === S.algo)));
+    $('frameCount').value = String(S.n);
+    const A = ALGOS[S.algo];
+    $('rule').innerHTML = '<span class="algo">' + S.algo + '</span><span>' + A.rule + '</span><span class="onhit">hit가 나면 → <b>' + A.onHit + '</b></span>';
+
+    $('refs').innerHTML = S.steps.map((st, i) => {
+      const cls = i < S.cur ? 'past ' + (st.hit ? 'h' : 'f') : i === S.cur && !S.done ? 'now' : '';
+      const tag = i < S.cur ? (st.hit ? 'hit' : 'F') : i === S.cur && !S.done ? '지금' : '';
+      return '<div class="ref ' + cls + '">' + esc(st.ref) + '<small>' + tag + '</small></div>';
+    }).join('');
+
+    const slots = S.done ? S.steps[S.steps.length - 1].after : S.steps[S.cur].before;
+    const recVisible = S.showRec || S.autoRec || S.done;
+    $('slots').innerHTML = slots.map((s, i) => {
+      let cls = 'slot';
+      if (S.flash && S.flash.slot === i) cls += S.flash.hit ? ' just-h' : ' just-f';
+      let meta = '';
+      if (s && recVisible){
+        if (S.algo === 'FIFO') meta = '들어온 t=' + s.load;
+        else if (S.algo === 'LRU') meta = '마지막 사용 t=' + s.last;
+        else meta = '횟수 ' + s.count + ' · 들어온 t=' + s.load;
+      }
+      const out = S.flash && S.flash.slot === i && S.flash.victim !== undefined && !S.flash.hit ? '<span class="out">' + esc(S.flash.victim) + ' 나감</span>' : '';
+      return '<button type="button" class="' + cls + '" data-slot="' + i + '" id="slot-' + i + '"' + (S.done ? ' disabled' : '') + '>' +
+        '<span class="lab">' + (i + 1) + 'x<kbd>' + (i + 1) + '번 키</kbd></span>' +
+        (s ? '<span class="pg">' + esc(s.page) + '</span>' : '<span class="pg empty">빈 칸</span>') +
+        '<span class="meta">' + (out || meta) + '</span></button>';
+    }).join('');
+    $('hitBtn').disabled = S.done;
+    $('revealBtn').disabled = S.done;
+
+    const m = $('msg'); m.innerHTML = S.msg; m.className = 'msg' + (S.msgKind ? ' ' + S.msgKind : '');
+
+    $('recLabel').textContent = '기록 줄 · ' + A.rec;
+    $('recToggle').textContent = S.showRec ? '숨기기' : '보기';
+    if (recVisible){
+      const list = recordList(slots, S.algo);
+      let vIdx = -1;
+      if (!S.done && slots.every(Boolean) && (S.autoRec)){
+        const v = pickVictim(slots, S.algo); vIdx = list.findIndex(x => x.page === slots[v].page);
+      }
+      $('recLine').innerHTML = list.length ? list.map((x, i) => '<span class="chip' + (i === vIdx ? ' v' : '') + '">' + esc(x.txt) + '</span>').join('<span class="arrow">›</span>') : '<span class="hidden">아직 비어 있어요</span>';
+    } else {
+      $('recLine').innerHTML = '<span class="hidden">머릿속(또는 종이)에 직접 적어 보세요. 막히면 "보기"를 눌러요.</span>';
+    }
+
+    $('stats').innerHTML = '<span>단계 <b>' + Math.min(S.cur + (S.done ? 0 : 1), S.steps.length) + ' / ' + S.steps.length + '</b></span>' +
+      '<span>부재 <b>' + S.faults + '</b></span><span>실수 <b>' + S.mistakes + '</b></span>';
+
+    renderGrid($('grid'), S.steps, S.cur, S.done ? -1 : S.cur);
+
+    const cw = $('compareWrap');
+    cw.hidden = !S.done;
+    if (S.done){
+      const box = $('cmp'); box.innerHTML = '';
+      ['FIFO','LRU','LFU'].forEach(a => {
+        const steps = simulate(S.refs, S.n, a);
+        const f = steps.filter(s => !s.hit).length;
+        const d = document.createElement('div');
+        d.innerHTML = '<h3>' + a + ' · 부재 <span>' + f + '회</span></h3><div class="scroll"><table class="grid"></table></div>';
+        renderGrid(d.querySelector('table'), steps, steps.length, -1);
+        box.appendChild(d);
+      });
+    }
+  }
+
+  // controls
+  const presetSel = $('preset');
+  presetSel.innerHTML = PRESETS.map((p, i) => '<option value="' + i + '">' + esc(p.label) + '</option>').join('') + '<option value="custom" hidden>직접 입력</option>';
+  presetSel.addEventListener('change', () => {
+    const p = PRESETS[+presetSel.value]; if (!p) return;
+    S.refs = parseRefs(p.refs); S.n = p.n; reset();
+  });
+  $('algoSeg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-algo]'); if (!b) return;
+    S.algo = b.dataset.algo; reset();
+  });
+  $('frameCount').addEventListener('change', e => { S.n = +e.target.value; reset(); });
+  $('customForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const refs = parseRefs($('refInput').value);
+    if (refs.length < 2){ S.msg = '참조를 두 개 이상 입력해 주세요. 예: 7 0 1 2 0 3'; S.msgKind = 'bad'; render(); return; }
+    S.refs = refs; presetSel.value = 'custom'; reset();
+  });
+  $('randBtn').addEventListener('click', () => {
+    const poolSize = S.n + 2 + Math.floor(Math.random() * 2);
+    const pool = []; while (pool.length < poolSize){ const v = Math.floor(Math.random() * 10); if (!pool.includes(v)) pool.push(v); }
+    const len = 10 + Math.floor(Math.random() * 3), refs = [];
+    while (refs.length < len){
+      const v = Math.random() < 0.35 && refs.length > 1 ? refs[Math.max(0, refs.length - 2 - Math.floor(Math.random() * 3))] : pool[Math.floor(Math.random() * pool.length)];
+      if (refs[refs.length - 1] !== v) refs.push(String(v));
+    }
+    S.refs = refs; presetSel.value = 'custom'; $('refInput').value = refs.join(' '); reset();
+  });
+  $('slots').addEventListener('click', e => {
+    const b = e.target.closest('button[data-slot]'); if (b) act(+b.dataset.slot);
+  });
+  $('hitBtn').addEventListener('click', () => act('hit'));
+  $('revealBtn').addEventListener('click', () => { if (!S.done) advance(true); });
+  $('resetBtn').addEventListener('click', reset);
+  $('recToggle').addEventListener('click', () => { S.showRec = !S.showRec; render(); });
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input, select, textarea') || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'h' || e.key === 'H' || e.key === 'ㅗ' || e.key === ' '){ e.preventDefault(); act('hit'); return; }
+    const k = parseInt(e.key, 10);
+    if (k >= 1 && k <= S.n){ e.preventDefault(); act(k - 1); }
+  });
+
+  reset();
+
+  // ---------- AI 튜터 (claude.use("sample")) ----------
+  // AI는 문제를 만들고 설명만 한다. 정답·채점은 항상 위의 simulate() 엔진이 한다.
+  const AI_CODES = {
+    not_granted:'AI 사용을 허용하지 않아서 이 기능을 쓸 수 없어요.', sampling_disabled:'이 계정에서는 AI를 쓸 수 없어요.',
+    rate_limited:'요청이 많아요. 잠시 뒤에 다시 눌러 주세요.', session_expired:'다시 로그인해 주세요.',
+    refused:'이 질문에는 답을 받지 못했어요. 표현을 바꿔 보세요.', invalid_json:'AI가 형식에 맞지 않게 답했어요. 한 번 더 눌러 주세요.',
+    empty_completion:'AI가 빈 답을 보냈어요. 다시 시도해 주세요.'
+  };
+  const HIDE_CODES = ['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'];
+  let sample = null, ctl = null, busy = false;
+
+  function slotDesc(s, i){
+    return (i + 1) + 'x=' + (s ? s.page + ' (들어온 t=' + s.load + ', 마지막 사용 t=' + s.last + ', 횟수 ' + s.count + ')' : '빈 칸');
+  }
+  function contextText(){
+    const A = ALGOS[S.algo], strip = h => h.replace(/<[^>]+>/g, '');
+    let t = '알고리즘: ' + S.algo + ' — ' + strip(A.rule) + '. hit가 나면: ' + A.onHit + '.\n' +
+      'LFU 동점 규칙: 횟수가 같으면 먼저 들어온 페이지. 나갔다 다시 들어오면 횟수 1부터. 빈 칸은 1x부터 채움. 처음 칸 채우기도 부재로 셈.\n' +
+      '프레임 수: ' + S.n + '\n참조열: ' + S.refs.join(' ') + '\n';
+    if (S.done){
+      ['FIFO','LRU','LFU'].forEach(a => {
+        const st = simulate(S.refs, S.n, a);
+        t += '[엔진 계산] ' + a + ' 부재 ' + st.filter(x => !x.hit).length + '회, 단계별: ' +
+          st.map(x => x.ref + (x.hit ? '(hit)' : x.victim !== undefined ? '(F, ' + x.victim + ' 나감)' : '(F)')).join(' ') + '\n';
+      });
+      t += '학생은 ' + S.algo + '로 다 풀었고 실수 ' + S.mistakes + '번.\n';
+      return t;
+    }
+    const st = S.steps[S.cur];
+    t += '현재: ' + (S.cur + 1) + '번째 참조 "' + st.ref + '" (t=' + st.t + ')\n';
+    t += '지금 칸 상태: ' + st.before.map(slotDesc).join(' / ') + '\n';
+    t += '기록 줄(' + A.rec + '): ' + recStr(st.before, S.algo).replace(/&amp;/g, '&') + '\n';
+    t += '[엔진 계산 정답] ' + (st.hit ? 'hit (' + (st.slot + 1) + 'x에 이미 있음, 칸은 그대로)'
+      : st.victim === undefined ? '부재, 빈 칸 ' + (st.slot + 1) + 'x에 넣음'
+      : '부재, ' + st.victim + ' 나가고 그 자리 ' + (st.slot + 1) + 'x에 ' + st.ref) + '\n';
+    if (S.lastChoice !== undefined){
+      t += '학생이 방금 누른 것(오답): ' + (S.lastChoice === 'hit' ? 'HIT 버튼'
+        : (S.lastChoice + 1) + 'x' + (st.before[S.lastChoice] ? ' (페이지 ' + st.before[S.lastChoice].page + '를 내보내려 함)' : ' (빈 칸)')) + '\n';
+    }
+    return t;
+  }
+  const TUTOR = '너는 정보처리기사 실기를 공부하는 학생의 페이지 교체 튜터다. 한국어 존댓말로 짧고 쉽게 설명한다. ' +
+    '학생이 자주 헷갈리는 점: hit가 난 다음 어느 칸을 덮어쓰는지("다음 칸" 순서로 고르는 습관), FIFO에도 hit를 반영하는 실수, LRU에서 방금 쓴 페이지를 내보내는 실수. ' +
+    '계산 결과는 아래 [엔진 계산]만 근거로 쓰고 절대 새로 계산해서 다른 숫자를 말하지 마라. 마크다운 표나 제목 없이 평문 문단과 짧은 목록만 쓴다.\n\n';
+
+  function aiShow(text, err){ const o = $('aiOut'); o.hidden = false; o.textContent = text; o.className = 'aiout' + (err ? ' err' : ''); }
+  function aiBusy(on){
+    busy = on;
+    ['aiGenBtn','aiExplainBtn'].forEach(id => { $(id).disabled = on; });
+    $('aiAskForm').querySelector('button[type=submit]').disabled = on;
+    $('aiStop').hidden = !on;
+  }
+  function aiFail(e){
+    const code = e && e.code;
+    if (code === 'cancelled'){ if (!e.text) $('aiOut').hidden = true; return; }
+    if (HIDE_CODES.includes(code)){
+      $('aiControls').hidden = true; $('aiAskForm').hidden = true;
+      $('aiNote').textContent = AI_CODES[code] || '이 화면에서는 AI를 쓸 수 없어요. 연습장은 그대로 쓸 수 있어요.';
+      $('aiOut').hidden = true; return;
+    }
+    aiShow((e && e.text ? e.text + '\n\n' : '') + (AI_CODES[code] || '연결이 끊겼어요. 다시 눌러 주세요.'), true);
+  }
+  async function aiStream(prompt){
+    if (busy || !sample) return;
+    ctl = new AbortController(); aiBusy(true); aiShow('생각하는 중…');
+    try {
+      const r = await sample(prompt, {signal:ctl.signal, cache:false, onText:({text}) => aiShow(text)});
+      if (r.truncated) aiShow(r.text + '\n\n(답이 길어서 중간에 끊겼어요.)');
+    } catch (e){ aiFail(e); } finally { aiBusy(false); }
+  }
+
+  $('aiExplainBtn').addEventListener('click', () => {
+    aiStream(TUTOR + contextText() + '\n요청: ' + (S.done
+      ? '이 문제 전체를 정리해 줘. 세 방식이 어디서 갈렸는지(어느 참조에서 누가 나갔는지)를 짚고, 학생이 다음에 조심할 점 한 줄.'
+      : '지금 단계에서 왜 정답이 그렇게 되는지 3~5문장으로 설명해 줘.' + (S.lastChoice !== undefined ? ' 학생이 누른 것이 왜 틀렸는지도 꼭 짚어 줘.' : '') + ' 마지막에 한 줄 요령.'));
+  });
+  $('aiAskForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const q = $('aiQuestion').value.trim().slice(0, 500);
+    if (!q) return;
+    aiStream(TUTOR + contextText() + '\n학생 질문: ' + q + '\n질문에 답해 줘. 필요하면 지금 문제 상황을 예로 들어.');
+  });
+  $('aiStop').addEventListener('click', () => ctl && ctl.abort());
+  $('aiGenBtn').addEventListener('click', async () => {
+    if (busy || !sample) return;
+    ctl = new AbortController(); aiBusy(true); aiShow('문제 만드는 중…');
+    const goal = $('aiGoal').value;
+    try {
+      const data = await sample.json(
+        '정보처리기사 실기용 페이지 교체 연습 문제의 참조열을 하나 만들어라.\n' +
+        '- 목적: ' + goal + '\n- 프레임 수: ' + S.n + '\n- 길이 8~15, 각 페이지는 0~9 한 자리 숫자, 같은 숫자가 바로 연달아 나오지 않게\n' +
+        '- 직전 문제와 겹치지 않게: ' + S.refs.join(' ') + '\n' +
+        '정답(부재 횟수)은 쓰지 마라. JSON 하나만: {"refs":[7,0,1,2],"point":"이 문제에서 주의할 점 한 문장"}',
+        {signal:ctl.signal, cache:false, modelTier:'default'});
+      const refs = Array.isArray(data && data.refs) ? data.refs.map(x => String(x).trim()).filter(x => /^[0-9]$/.test(x)).slice(0, 20) : [];
+      if (refs.length < 5){ aiShow('AI가 만든 참조열이 너무 짧거나 형식이 달라요. 한 번 더 눌러 주세요.', true); return; }
+      S.refs = refs; presetSel.value = 'custom'; $('refInput').value = refs.join(' '); reset();
+      const counts = ['FIFO','LRU','LFU'].map(a => simulate(refs, S.n, a).filter(x => !x.hit).length);
+      const allDiff = new Set(counts).size === 3;
+      aiShow('새 문제: ' + refs.join(' ') + ' (프레임 ' + S.n + ')\n' +
+        (data.point ? '주의할 점: ' + String(data.point).slice(0, 200) + '\n' : '') +
+        (goal.includes('서로 다르게') && !allDiff ? '(엔진으로 확인해 보니 이번엔 두 방식 이상 결과가 같아요. 그래도 연습엔 충분해요.)\n' : '') +
+        '정답은 엔진이 계산해요. 풀고 나면 아래에서 세 방식을 비교할 수 있어요.');
+    } catch (e){ aiFail(e); } finally { aiBusy(false); }
+  });
+
+  (async () => {
+    try { sample = window.claude && window.claude.use ? await window.claude.use('sample') : null; } catch (e){ sample = null; }
+    if (!sample){ $('aiNote').textContent = '이 화면에서는 AI를 쓸 수 없어요. 연습장은 그대로 쓸 수 있어요.'; return; }
+    $('aiNote').textContent = '처음 누를 때 AI 사용 허용을 물어봐요. 내 Claude 사용량을 써요.';
+    $('aiControls').hidden = false; $('aiAskForm').hidden = false;
+  })();
+})();
+</script>
