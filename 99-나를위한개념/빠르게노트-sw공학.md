@@ -19,7 +19,7 @@ tags: [#sw-engineering, #quick-note, #for-exam]
 
 한 줄 요약(암기용):
 - Singleton — 인스턴스 하나만 제공
-- Abstract Factory — 관련 객체군(kit)을 ��어 생성
+- Abstract Factory — 관련 객체군(kit)을 묶��� 생성
 - Adapter — 인터페이스 변환 (wrapper)
 - Bridge — 기능 계층과 구현 계층 분리
 - Proxy — 대리 객체로 접근 제어 (lazy, 로그, 보안)
@@ -70,7 +70,7 @@ tags: [#sw-engineering, #quick-note, #for-exam]
 
 ## 암기 팁 & 요약 카드
 - 디자인 패턴: "Singleton / Abstract Factory / Adapter / Bridge / Proxy / Observer" 순으로 핵심 한 줄씩 외우기
-- 응집도 암기: 기순교절시논우 (기능>순차>���환>절차>시간>논리>우연)
+- 응집도 암기: 기순교절시논우 (기능>순차>교환>절차>시간>논리>우연)
 - 결합도 암기: 자스제외공내 (자료<스탬프<제어<외부<공통<내용)
 - 스텁/드라이버: 하향→스텁, 상향→드라이버
 - 커버리지: 문장 < 분기 < 조건 < 경로 (엄격도 순)
