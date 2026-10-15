@@ -19,7 +19,7 @@ tags: [#sw-engineering, #quick-note, #for-exam]
 
 한 줄 요약(암기용):
 - Singleton — 인스턴스 하나만 제공
-- Abstract Factory — 관련 객체군(kit)을 묶��� 생성
+- Abstract Factory — 관련 객체군을 묶어서 생성
 - Adapter — 인터페이스 변환 (wrapper)
 - Bridge — 기능 계층과 구현 계층 분리
 - Proxy — 대리 객체로 접근 제어 (lazy, 로그, 보안)
