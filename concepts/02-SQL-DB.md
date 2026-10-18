@@ -126,3 +126,4 @@
 - 2026-10-18: UPDATE 두 문장 연속 후 SUM → 본인 "UPDATE를 잘 몰라"(모름, 정답 8000)
 - 핵심: `UPDATE 테이블 SET 컬럼 = 새 값 WHERE 조건` = 조건 맞는 행의 값 변경. 문장은 **순서대로** 적용되고 두 번째 문장은 바뀐 결과를 기준으로 조건을 검사. WHERE 없으면 전 행 변경
 - 본인 분석 (10-18): "DCL DDL (하나 더 = DML) 어느 쪽을 아예 모르는지 느낌이 온다" → **SELECT 외의 명령문(DDL·DML·DCL) 전반이 비어 있음**. SELECT 읽기 5/8 vs 명령문 0/4
+- 📘 [[../99-나를위한개념/SQL-명령문-개념정리]] (DDL · DML · DCL · TCL, RESTRICT/CASCADE · 뷰 · GRANT/REVOKE 포함)
