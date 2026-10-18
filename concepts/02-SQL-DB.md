@@ -4,16 +4,26 @@
 |------|------|------|--------------|------|
 | COUNT(DISTINCT) 집계함수 | 7 | 2 | 2026-10-12 | 🟢 |
 | 정규화 단계 (부분 함수 종속 → 2NF) | 4 | 0 | 2026-10-14 | 🔴 |
-| OUTER JOIN 결과 행 수 | 2 | 1 | 2026-10-08 | 🟢 |
-| WHERE vs HAVING 실행 순서 | 2 | 1 | 2026-10-08 | 🟢 |
+| OUTER JOIN 결과 행 수 | 3 | 2 | 2026-10-18 | 🟢 |
+| WHERE vs HAVING 실행 순서 | 3 | 2 | 2026-10-18 | 🟢 |
 | 트랜잭션 특성 (ACID) | 4 | 1 | 2026-10-14 | 🟢 |
 | 키의 종류 (슈퍼키/후보키/기본키) | 2 | 0 | 2026-10-14 | 🔴 |
-| DDL 옵션 (RESTRICT vs CASCADE) | 1 | 0 | 2026-10-08 | 🔴 |
+| DDL 옵션 (RESTRICT vs CASCADE) | 2 | 0 | 2026-10-18 | 🔴 |
 | 관계대수 연산자 (σ/π/⋈/÷) | 1 | 0 | 2026-10-08 | 🔴 |
 | 무결성 제약 (개체/참조/도메인) | 1 | 1 | 2026-10-08 | 🟢 |
 | UNION vs UNION ALL | 1 | 1 | 2026-10-12 | 🟢 |
-| DCL (GRANT / REVOKE / WITH GRANT OPTION) | 1 | 0 | 2026-10-14 | 🔴 |
-| LIKE 와일드카드 (_ / %) | 1 | 0 | 2026-10-14 | 🔴 |
+| DCL (GRANT / REVOKE / WITH GRANT OPTION) | 2 | 0 | 2026-10-18 | 🔴 |
+| LIKE 와일드카드 (_ / %) | 2 | 0 | 2026-10-18 | 🔴 |
+| 논리 연산자 우선순위 (NOT > AND > OR) | 1 | 0 | 2026-10-18 | 🔴 |
+| IN + 서브쿼리 | 1 | 1 | 2026-10-18 | 🟢 |
+| BETWEEN (양 끝 포함) | 1 | 1 | 2026-10-18 | 🟢 |
+| NULL 비교 (= NULL vs IS NULL) | 1 | 0 | 2026-10-18 | 🔴 |
+| INNER JOIN / CROSS JOIN 행 수 | 1 | 0 | 2026-10-18 | 🔴 |
+| ALTER TABLE (ADD / DROP / MODIFY) | 1 | 0 | 2026-10-18 | 🔴 |
+| 서브쿼리 비교 (ALL / ANY) | 1 | 0 | 2026-10-18 | 🔴 |
+| ORDER BY 다중 정렬 (ASC / DESC) | 1 | 0 | 2026-10-18 | 🔴 |
+| 집합 연산자 (EXCEPT / INTERSECT) | 1 | 1 | 2026-10-18 | 🟢 |
+| DML UPDATE (순차 실행) | 1 | 0 | 2026-10-18 | 🔴 |
 
 ### 오답 메모
 
@@ -41,12 +51,14 @@
 - 본인 분석: OUTER JOIN 개념이 미숙했음
 - 핵심: 왼쪽 행은 모두 남지만 1:N 매칭이면 행이 늘어남. 매칭 없으면 오른쪽 컬럼 NULL. 오른쪽에만 있는 행은 버려짐 (FULL이면 포함)
 - 2026-10-08: 학생 3 FULL OUTER JOIN 수강(1이 2건, 4·5는 오른쪽에만) → 6 정답 (매칭 2 + 왼쪽만 2 + 오른쪽만 2)
+- 2026-10-18: LEFT JOIN + `WHERE 오른쪽 IS NULL`(짝 없는 고객 찾기) → 2 **정답**
 
 **WHERE vs HAVING 실행 순서**
 - 2026-10-06: WHERE 금액≥100 → GROUP BY → HAVING SUM≥200 → 1로 오답(정답 2: 서울 300, 대구 300)
 - 본인 분석: **SUM을 AVG로 착각**함 (실행 순서보다 집계함수를 잘못 읽은 것) → 재출제 시 집계함수 종류를 섞어서 확인
 - 핵심: FROM → WHERE(행 필터) → GROUP BY → HAVING(그룹 필터) → SELECT → ORDER BY. HAVING은 그룹 **합계** 기준. WHERE가 그룹 합계를 바꿀 수 있음(부산 200 → 150)
 - 2026-10-08: GROUP BY 지역 HAVING AVG(금액) >= 150 + SELECT COUNT(금액) → 서울 2, 대구 1 정답. 집계함수 종류(AVG/COUNT)를 섞어도 정확히 읽음
+- 2026-10-18: HAVING COUNT(*) >= 2 AND SUM >= 250 + SELECT COUNT(금액)(A에 NULL 1건) → A 2, B 2 **정답**. HAVING의 COUNT(*)와 SELECT의 COUNT(컬럼)을 구분함
 
 **트랜잭션 특성 (ACID)**
 - 2026-10-06: "동시 실행 트랜잭션이 서로의 중간 결과 참조 불가" → 원자성으로 오답(정답 격리성)
@@ -66,6 +78,7 @@
 **DDL 옵션 (RESTRICT vs CASCADE)**
 - 2026-10-08: "참조 중이면 삭제 취소" → TRUNCATE로 오답(정답 RESTRICT)
 - 핵심: RESTRICT = 참조 중이면 거부, CASCADE = 참조하는 쪽까지 연쇄 삭제. TRUNCATE는 옵션이 아니라 "구조는 두고 데이터 전부 삭제"하는 별도 명령
+- 2026-10-18: 뷰 v_영업이 참조하는 상태에서 `DROP TABLE 사원 RESTRICT` → "사원만 삭제, 뷰는 남음"으로 오답(정답 삭제 거부). 본인: "뷰랑 RESTRICT 몰라" → **뷰 개념(SELECT문에 이름 붙인 가상 테이블 = 원본에 의존)부터 없음**. RESTRICT = 거부 / CASCADE = 함께 삭제. 2연속 오답
 
 **관계대수 연산자 (σ/π/⋈/÷)**
 - 2026-10-08: "조건을 만족하는 튜플 추출" → ⋈로 오답(정답 σ)
@@ -78,7 +91,38 @@
 **DCL (GRANT / REVOKE / WITH GRANT OPTION)**
 - 2026-10-14: `GRANT SELECT ON emp TO user1 WITH GRANT OPTION;` → 본인 "GRANT 모른다"며 모름(오답 처리)
 - 핵심: GRANT = 권한 부여, REVOKE = 회수. `WITH GRANT OPTION` = 받은 권한을 **다른 사용자에게 다시 부여**할 수 있음. REVOKE ... CASCADE = 그 사용자가 준 권한까지 연쇄 회수. DCL: GRANT / REVOKE (+ COMMIT / ROLLBACK은 TCL). 📘 [[../99-나를위한개념/DB-기본개념]] §9-3
+- 2026-10-18: DBA→kim(WITH GRANT OPTION)→lee 후 `REVOKE ... FROM kim CASCADE` → 본인 "아예 모른다"(오답, 정답 둘 다 회수). 2연속 모름. **GRANT ... TO / REVOKE ... FROM** 문법 모양부터 익히기
 
 **LIKE 와일드카드 (_ / %)**
 - 2026-10-14: `name LIKE '_a%'`, (Kim, Park, Lee, Jang, Han, Baker) → 3개로 오답(정답 4개: Park, Jang, Han, Baker). Baker를 놓쳤을 가능성(B-a-ker, 두 번째 글자가 a). 본인 코멘트 없음
 - 핵심: `_` = 글자 **정확히 1개**, `%` = 0개 이상. `'_a%'` = 두 번째 글자가 a. 하나씩 글자를 세어 표시하며 확인
+- 2026-10-18: `'%S_'`(끝에서 두 번째가 S), (AS1, BS, CAS9, S2, ASK, XSS) → 4로 오답(정답 5). **S2(`%` = 0글자)나 XSS를 놓친 것으로 보임**(본인 코멘트 없음). 2연속 1개 차이 오답 → 개념은 아는데 **하나씩 표시하며 세는 습관**이 부족
+
+**논리 연산자 우선순위 (NOT > AND > OR)**
+- 2026-10-18: `부서='개발' OR 부서='영업' AND 급여>=4000` → 2로 오답(정답 3). 왼쪽부터 `(개발 OR 영업) AND 급여`로 묶음
+- 핵심: **AND가 OR보다 먼저** (AND = 곱, OR = 합). 괄호 없으면 AND 양쪽부터 괄호로 묶고 시작. 기출 2024-1회 18번 같은 유형
+
+**NULL 비교 (= NULL vs IS NULL)**
+- 2026-10-18: `bonus = NULL` / `bonus IS NULL` 행 수 → 본인 "is와 =의 차이를 솔직히 모르겠다"(모름)
+- 핵심: NULL은 값이 아니라 "모름" 상태 → `= NULL`은 항상 UNKNOWN → WHERE에서 **0행**. NULL 확인은 반드시 `IS NULL` / `IS NOT NULL`. 0은 NULL이 아님. (같은 날 Q14에서 `IS NULL`이 들어간 LEFT JOIN은 맞힘)
+
+**INNER JOIN / CROSS JOIN 행 수**
+- 2026-10-18: 사원(D1, D2, D1, NULL, D4) INNER JOIN 부서(D1, D2, D3) → 4로 오답(정답 3), CROSS JOIN은 "뭔지 몰라"(정답 5×3=15)
+- 핵심: INNER = 양쪽 짝 있는 행만. **NULL은 어떤 값과도 매칭 안 됨**, 상대 테이블에 없는 값(D4)도 탈락. CROSS = 모든 조합(행 수 곱, 관계대수 교차곱 ×). 실기에선 `CROSS JOIN` 키워드보다 관계대수 ×나 `FROM A, B`(조건 없음) 형태로 나옴
+
+**ALTER TABLE (ADD / DROP / MODIFY)**
+- 2026-10-18: 컬럼 추가/삭제 빈칸 → 본인 "INSERT, MODIFY, ADD 쪽은 잘 모른다. DROP이 찐 삭제라는 것 쯤만 앎"(모름, ② DROP은 알았음)
+- 핵심: ALTER는 구조(DDL)라서 **ADD / DROP (COLUMN) / MODIFY**. INSERT·DELETE는 행을 다루는 DML이라 ALTER 안에 못 씀. DDL ↔ DML 짝: CREATE↔INSERT, ALTER↔UPDATE, DROP↔DELETE
+
+**서브쿼리 비교 (ALL / ANY)**
+- 2026-10-18: `가격 > ALL (100, 300)` → 본인 "ALL의 의미를 모르겠어"(모름, 정답 P4·P5)
+- 핵심: `> ALL` = 모든 값보다 큼 = `> MAX`, `> ANY` = 하나보다만 크면 됨 = `> MIN`, `= ANY` = IN
+
+**ORDER BY 다중 정렬 (ASC / DESC)**
+- 2026-10-18: `ORDER BY 반 DESC, 점수 ASC` → 반을 1반부터(ASC) 정렬해 오답(정답 라, 나, 가, 마, 다). 점수 ASC는 맞게 적용
+- 핵심: **DESC = 큰 것부터**(Descend = 내려감), ASC = 작은 것부터(기본값). 정렬 키워드는 바로 앞 컬럼에만 적용
+
+**DML UPDATE (순차 실행)**
+- 2026-10-18: UPDATE 두 문장 연속 후 SUM → 본인 "UPDATE를 잘 몰라"(모름, 정답 8000)
+- 핵심: `UPDATE 테이블 SET 컬럼 = 새 값 WHERE 조건` = 조건 맞는 행의 값 변경. 문장은 **순서대로** 적용되고 두 번째 문장은 바뀐 결과를 기준으로 조건을 검사. WHERE 없으면 전 행 변경
+- 본인 분석 (10-18): "DCL DDL (하나 더 = DML) 어느 쪽을 아예 모르는지 느낌이 온다" → **SELECT 외의 명령문(DDL·DML·DCL) 전반이 비어 있음**. SELECT 읽기 5/8 vs 명령문 0/4
